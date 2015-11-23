@@ -114,7 +114,3 @@ func (h *Handler) Handle(ctx context.Context, in chan dispatch.Message) {
 		}
 	}
 }
-
-// curl -v -H "Authorization: Bearer $ASANA_TKN" https://app.asana.com/api/1.0/tasks -X POST -H "Content-Type: application/json" -d '{"data":{"assignee":44904587765688,"name":"Buy Catnip","workspace":44904596360873,"projects":[68060200860521]}}'
-
-// curl -H "Authorization: Bearer $ASANA_TKN" https://app.asana.com/api/1.0/teams/68060200860520/projects
