@@ -2,7 +2,7 @@ package github
 
 import (
 	"encoding/json"
-	"github.com/Sirupsen/logrus"
+	"github.com/asteris-llc/pushmipullyu/Godeps/_workspace/src/github.com/Sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 )

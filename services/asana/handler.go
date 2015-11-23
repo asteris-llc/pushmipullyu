@@ -3,10 +3,10 @@ package asana
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Sirupsen/logrus"
+	"github.com/asteris-llc/pushmipullyu/Godeps/_workspace/src/github.com/Sirupsen/logrus"
+	"github.com/asteris-llc/pushmipullyu/Godeps/_workspace/src/golang.org/x/net/context"
 	"github.com/asteris-llc/pushmipullyu/dispatch"
 	"github.com/asteris-llc/pushmipullyu/services/github"
-	"golang.org/x/net/context"
 	"math/rand"
 )
 

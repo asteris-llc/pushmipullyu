@@ -1,8 +1,8 @@
 package dispatch
 
 import (
-	"github.com/Sirupsen/logrus"
-	"golang.org/x/net/context"
+	"github.com/asteris-llc/pushmipullyu/Godeps/_workspace/src/github.com/Sirupsen/logrus"
+	"github.com/asteris-llc/pushmipullyu/Godeps/_workspace/src/golang.org/x/net/context"
 )
 
 // Dispatch manages a dispatcher function. It handles registration.

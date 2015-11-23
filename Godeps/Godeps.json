@@ -1,0 +1,26 @@
+{
+	"ImportPath": "github.com/asteris-llc/pushmipullyu",
+	"GoVersion": "go1.5.1",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.8.7",
+			"Rev": "418b41d23a1bf978c06faea5313ba194650ac088"
+		},
+		{
+			"ImportPath": "github.com/smallnest/goreq",
+			"Rev": "0fb9f4b8a654b3c562a62e8121dbc570ab26593d"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "5627bad10b821d907ac4dc81fb3535ec7dd81c2b"
+		},
+		{
+			"ImportPath": "golang.org/x/net/publicsuffix",
+			"Rev": "5627bad10b821d907ac4dc81fb3535ec7dd81c2b"
+		}
+	]
+}

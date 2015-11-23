@@ -1,7 +1,7 @@
 package asana
 
 import (
-	"github.com/smallnest/goreq"
+	"github.com/asteris-llc/pushmipullyu/Godeps/_workspace/src/github.com/smallnest/goreq"
 )
 
 // Asana works with the Asana API
