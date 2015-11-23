@@ -7,7 +7,7 @@ import (
 	"github.com/asteris-llc/pushmipullyu/dispatch"
 	"github.com/asteris-llc/pushmipullyu/services/github"
 	"golang.org/x/net/context"
-	"strconv"
+	"math/rand"
 )
 
 // Handler listens to events from other services and turns them into Asana
@@ -40,7 +40,10 @@ func New(token string, teamID int) (*Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	handler.Organization = team.Organization.ID
+	if team.Data.Organization.ID == 0 {
+		return nil, fmt.Errorf("could not get organization: %s", jsonResponse)
+	}
+	handler.Organization = team.Data.Organization.ID
 
 	return handler, nil
 }
@@ -79,30 +82,66 @@ func (h *Handler) Handle(ctx context.Context, in chan dispatch.Message) {
 					h.logger.WithField("error", err).Error("error parsing projects")
 					continue
 				}
+				h.logger.WithField("projects", projects).Debug("got projects")
 
-				var project *NameID
+				var (
+					project      NameID
+					foundProject = false
+				)
 				for _, potential := range projects.Data {
 					if potential.Name == issue.Repository.Name {
-						project = &potential
+						project = potential
+						foundProject = true
 						break
 					}
 				}
-				if project == nil {
-					h.logger.WithField("project", issue.Repository.Name).Debug("no matching project")
+				if !foundProject {
+					h.logger.WithField("project", issue.Repository.Name).Debug("destination project not found")
 					continue
 				}
 
-				// TODO: get users and assign a random one
+				// get users
+				_, usersBody, errs := h.Asana.Client().Get(fmt.Sprintf("https://app.asana.com/api/1.0/teams/%d/users", h.Team)).End()
+				if errs != nil {
+					for _, err := range errs {
+						h.logger.WithField("error", err).Error("error retrieving users")
+					}
+					continue
+				}
+
+				users := &WrappedNameIDs{}
+				err = json.Unmarshal([]byte(usersBody), users)
+				if err != nil {
+					h.logger.WithField("error", err).Error("error parsing users")
+					continue
+				}
+				h.logger.WithField("users", users).Debug("got users")
+
+				user := users.Data[rand.Intn(len(users.Data))]
 
 				// prepare request
-				_, _, errs = h.Asana.Client().
-					SetHeader("name", fmt.Sprintf("%s (%d)", issue.Issue.Title, issue.Issue.Number)).
-					// SetHeader("assignee", ).
-					SetHeader("notes", fmt.Sprintf("%s\n\nOpened by %s at %s\n\n%s", issue.Issue.URL, issue.Issue.User.Login, issue.Issue.CreatedAt, issue.Issue.Body)).
-					SetHeader("workspace", strconv.Itoa(h.Organization)).
-					SetHeader("projects[0]", strconv.Itoa(project.ID)).
+				task := createTask{
+					Assignee:  user.ID,
+					Name:      fmt.Sprintf("%s (#%d)", issue.Issue.Title, issue.Issue.Number),
+					Notes:     fmt.Sprintf("%s\n\nOpened by %s at %s\n\n%s", issue.Issue.URL, issue.Issue.User.Login, issue.Issue.CreatedAt, issue.Issue.Body),
+					Projects:  []int{project.ID},
+					Workspace: h.Organization,
+				}
+
+				h.logger.WithField("task", task).Debug("task")
+
+				taskJSON, err := json.Marshal(dataWrapper{task})
+				if err != nil {
+					h.logger.WithField("error", err).Error("error marshalling task JSON")
+					continue
+				}
+
+				_, body, errs := h.Asana.Client().
+					SendRawBytes(taskJSON).
 					Post("https://app.asana.com/api/1.0/tasks").
 					End()
+
+				h.logger.WithField("body", body).Debug("created a task")
 
 				for _, err := range errs {
 					h.logger.WithField("error", err).Error("error creating task")

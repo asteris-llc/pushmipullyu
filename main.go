@@ -4,7 +4,9 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/asteris-llc/pushmipullyu/dispatch"
 	"github.com/asteris-llc/pushmipullyu/services/asana"
+	"github.com/asteris-llc/pushmipullyu/services/github"
 	"golang.org/x/net/context"
+	"math/rand"
 	"os"
 	"os/signal"
 	"strconv"
@@ -15,6 +17,10 @@ func main() {
 	// logging
 	logrus.SetLevel(logrus.DebugLevel)
 
+	// seed random
+	rand.Seed(time.Now().Unix())
+
+	//
 	ctx, shutdown := context.WithCancel(context.Background())
 
 	// dispatcher
@@ -30,12 +36,29 @@ func main() {
 	if err != nil {
 		logrus.WithField("error", err).Fatal("could not initialize Asana")
 	}
-	go asana.Handle(ctx, dispatch.Register("github:issues"))
+	go asana.Handle(ctx, dispatch.Register("github:opened"))
 
+	// Github
+	github, err := github.New(os.Getenv("PORT"))
+	if err != nil {
+		logrus.WithField("error", err).Fatal("could not initialize Github")
+	}
+	go func() {
+		err := github.Produce(dispatch.Send)
+		if err != nil {
+			logrus.WithField("error", err).Error("error starting producer")
+		}
+		logrus.Info("shutting down due to HTTP stopping")
+		shutdown()
+	}()
+
+	// and finally sleep and catch events
 	defer shutdown()
-	catch(shutdown)
+	go catch(shutdown)
 
 	// give services time to finish and shut down
+	<-ctx.Done()
+	logrus.Info("waiting for grace period for services to shut down")
 	time.Sleep(time.Second * 5)
 }
 

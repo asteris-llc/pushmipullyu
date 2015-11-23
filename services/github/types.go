@@ -18,7 +18,7 @@ type User struct {
 
 // Repository is returned from the API
 type Repository struct {
-	Name string `json:"name"`
+	Name string `json:"full_name"`
 }
 
 // Events

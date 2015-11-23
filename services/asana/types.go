@@ -16,5 +16,21 @@ type WrappedNameIDs struct {
 // Responses
 
 type teamResponse struct {
-	Organization NameID `json:"organization"`
+	Data struct {
+		Organization NameID `json:"organization"`
+	} `json:"data"`
+}
+
+// Requests
+
+type dataWrapper struct {
+	Data interface{} `json:"data"`
+}
+
+type createTask struct {
+	Assignee  int    `json:"assignee"`
+	Name      string `json:"name"`
+	Notes     string `json:"notes"`
+	Projects  []int  `json:"projects"`
+	Workspace int    `json:"workspace"`
 }

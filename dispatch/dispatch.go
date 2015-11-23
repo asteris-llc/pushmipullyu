@@ -32,17 +32,19 @@ func (d *Dispatch) Send(tag string, payload interface{}) {
 
 // Register registers a function for a tag and returns a channel on which events
 // will be sent for that tag.
-func (d *Dispatch) Register(tag string) chan Message {
+func (d *Dispatch) Register(tags ...string) chan Message {
 	out := make(chan Message, 1)
 
-	current, ok := d.handlers[tag]
-	if ok {
-		d.handlers[tag] = append(current, out)
-	} else {
-		d.handlers[tag] = []chan Message{out}
+	for _, tag := range tags {
+		current, ok := d.handlers[tag]
+		if ok {
+			d.handlers[tag] = append(current, out)
+		} else {
+			d.handlers[tag] = []chan Message{out}
+		}
 	}
 
-	logrus.WithField("tag", tag).Debug("registered handler")
+	logrus.WithField("tags", tags).Debug("registered handler")
 	return out
 }
 
@@ -56,6 +58,8 @@ func (d *Dispatch) Run(ctx context.Context) {
 				for _, t := range targets {
 					t <- value
 				}
+			} else {
+				logrus.WithField("tag", value.Tag).Debug("no handlers registered")
 			}
 		case <-ctx.Done():
 			logrus.Info("dispatch received shutdown event")
