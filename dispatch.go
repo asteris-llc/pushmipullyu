@@ -1,5 +1,9 @@
 package main
 
+import (
+	"golang.org/x/net/context"
+)
+
 // Dispatch manages a dispatcher function. It handles registration.
 type Dispatch struct {
 	in       chan message
@@ -12,14 +16,11 @@ type message struct {
 }
 
 // NewDispatch creates a new empty dispatch and starts it running
-func NewDispatch(ctx chan struct{}) *Dispatch {
-	d := &Dispatch{
+func NewDispatch() *Dispatch {
+	return &Dispatch{
 		in:       make(chan message, 0),
 		handlers: map[string][]chan interface{}{},
 	}
-	go d.run(ctx)
-
-	return d
 }
 
 // Send takes an event tag and a payload and dispatches it as soon as possible.
@@ -42,7 +43,8 @@ func (d *Dispatch) Register(tag string) chan interface{} {
 	return out
 }
 
-func (d *Dispatch) run(ctx chan struct{}) {
+// Run begins the dispatch process
+func (d *Dispatch) Run(ctx context.Context) {
 	for {
 		select {
 		case value := <-d.in:
@@ -51,7 +53,7 @@ func (d *Dispatch) run(ctx chan struct{}) {
 					t <- value.Payload
 				}
 			}
-		case <-ctx:
+		case <-ctx.Done():
 			return
 		}
 	}
