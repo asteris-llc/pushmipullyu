@@ -7,6 +7,7 @@ import (
 	"golang.org/x/net/context"
 	"os"
 	"os/signal"
+	"strconv"
 	"time"
 )
 
@@ -21,8 +22,15 @@ func main() {
 	go dispatch.Run(ctx)
 
 	// Asana
-	asana := asana.New(os.Getenv("ASANA_TOKEN"))
-	go asana.Handle(ctx, dispatch.Register("github"))
+	team, err := strconv.Atoi(os.Getenv("ASANA_TEAM"))
+	if err != nil {
+		logrus.WithField("error", err).Fatal("could not convert ASANA_TEAM to int")
+	}
+	asana, err := asana.New(os.Getenv("ASANA_TOKEN"), team)
+	if err != nil {
+		logrus.WithField("error", err).Fatal("could not initialize Asana")
+	}
+	go asana.Handle(ctx, dispatch.Register("github:issues"))
 
 	defer shutdown()
 	catch(shutdown)
