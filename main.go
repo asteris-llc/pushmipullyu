@@ -44,7 +44,7 @@ func catch(handler func()) {
 	signal.Notify(signals, os.Interrupt)
 
 	for _ = range signals {
-		logrus.Debug("received interrupt signal")
+		logrus.Warn("received shutdown signal")
 		handler()
 		return
 	}
