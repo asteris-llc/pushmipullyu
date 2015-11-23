@@ -1,45 +1,48 @@
-package main
+package dispatch
 
 import (
+	"github.com/Sirupsen/logrus"
 	"golang.org/x/net/context"
 )
 
 // Dispatch manages a dispatcher function. It handles registration.
 type Dispatch struct {
-	in       chan message
-	handlers map[string][]chan interface{}
+	in       chan Message
+	handlers map[string][]chan Message
 }
 
-type message struct {
+// Message is passed around to everybody. It wraps a payload and tag.
+type Message struct {
 	Tag     string
 	Payload interface{}
 }
 
-// NewDispatch creates a new empty dispatch and starts it running
-func NewDispatch() *Dispatch {
+// New creates a new empty dispatch and starts it running
+func New() *Dispatch {
 	return &Dispatch{
-		in:       make(chan message, 0),
-		handlers: map[string][]chan interface{}{},
+		in:       make(chan Message, 0),
+		handlers: map[string][]chan Message{},
 	}
 }
 
 // Send takes an event tag and a payload and dispatches it as soon as possible.
 func (d *Dispatch) Send(tag string, payload interface{}) {
-	d.in <- message{tag, payload}
+	d.in <- Message{tag, payload}
 }
 
 // Register registers a function for a tag and returns a channel on which events
 // will be sent for that tag.
-func (d *Dispatch) Register(tag string) chan interface{} {
-	out := make(chan interface{}, 1)
+func (d *Dispatch) Register(tag string) chan Message {
+	out := make(chan Message, 1)
 
 	current, ok := d.handlers[tag]
 	if ok {
 		d.handlers[tag] = append(current, out)
 	} else {
-		d.handlers[tag] = []chan interface{}{out}
+		d.handlers[tag] = []chan Message{out}
 	}
 
+	logrus.WithField("tag", tag).Debug("registered handler")
 	return out
 }
 
@@ -49,11 +52,13 @@ func (d *Dispatch) Run(ctx context.Context) {
 		select {
 		case value := <-d.in:
 			if targets, ok := d.handlers[value.Tag]; ok {
+				logrus.WithField("tag", value.Tag).Debug("received message matching tag, dispatching")
 				for _, t := range targets {
-					t <- value.Payload
+					t <- value
 				}
 			}
 		case <-ctx.Done():
+			logrus.Info("dispatch received shutdown event")
 			return
 		}
 	}

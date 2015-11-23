@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/asteris-llc/pushmipullyu/dispatch"
 	"golang.org/x/net/context"
 	"os"
 	"os/signal"
@@ -10,7 +11,7 @@ func main() {
 	ctx, shutdown := context.WithCancel(context.Background())
 
 	// dispatcher
-	dispatch := NewDispatch()
+	dispatch := dispatch.New()
 	dispatch.Run(ctx)
 
 	// TODO: services
